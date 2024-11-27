@@ -33,15 +33,14 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
 - `datetime`
 
 ### Installation
-1. Install the required Python libraries using:
+#### Install the required Python libraries using:
    ```bash
    pip install opencv-python face_recognition
    ```
-   -If installation not working try manually isntalling dlib from [https://github.com/z-mahmud22/Dlib_Windows_Python3.x](https://github.com/z-mahmud22/Dlib_Windows_Python3.x)
+   - If installation not working try manually isntalling dlib from [https://github.com/z-mahmud22/Dlib_Windows_Python3.x](https://github.com/z-mahmud22/Dlib_Windows_Python3.x)
 
-   -You might also need to downgrade your numpy to numpy==1.26.4
+   - You might also need to downgrade your numpy to numpy==1.26.4
 
-3. Ensure your system has a working camera for photo capture.
 
 ## Usage
 

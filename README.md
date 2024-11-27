@@ -49,7 +49,7 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
      ```
 
 ### Tolerence
-If result is not accurate try changing `TOLERENCE` value
+If result is not accurate try changing `TOLERENCE` value in attendance.py
 
 ## Author
 

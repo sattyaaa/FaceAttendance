@@ -50,4 +50,4 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
 
 ## Author
 
-Created by @sattyaaa
+Created by [sattyaaa](https://github.com/sattyaaa).

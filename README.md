@@ -37,7 +37,7 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
    ```bash
    pip install opencv-python face_recognition
    ```
-   - If installation not working try manually isntalling dlib from [https://github.com/z-mahmud22/Dlib_Windows_Python3.x](https://github.com/z-mahmud22/Dlib_Windows_Python3.x)
+   - If installation not working try manually installing dlib from [https://github.com/z-mahmud22/Dlib_Windows_Python3.x](https://github.com/z-mahmud22/Dlib_Windows_Python3.x)
 
    - You might also need to downgrade your numpy to numpy==1.26.4
 

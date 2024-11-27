@@ -7,7 +7,9 @@ from datetime import datetime
 # Paths
 PHOTO_FOLDER = "photos"
 ATTENDANCE_FILE = "attendance.csv"
-TOLERENCE = 0.4 #If program not working properly try adjusting tolerence value
+
+#If program not working properly try adjusting tolerence value
+TOLERENCE = 0.4 
 
 # Ensure directories and files exist
 os.makedirs(PHOTO_FOLDER, exist_ok=True)

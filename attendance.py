@@ -7,6 +7,7 @@ from datetime import datetime
 # Paths
 PHOTO_FOLDER = "photos"
 ATTENDANCE_FILE = "attendance.csv"
+TOLERENCE = 0.4 #If program not working properly try adjusting tolerence value
 
 # Ensure directories and files exist
 os.makedirs(PHOTO_FOLDER, exist_ok=True)
@@ -64,8 +65,13 @@ def register_student(roll_no, name):
     """Registers a new student."""
     if not roll_no or not name:
         return "Roll number and name are required!" , False
+    
+    try:
+        roll_no=int(roll_no)
+    except ValueError:
+        return "Roll no should be Integer", False
 
-    photo_path = os.path.join(PHOTO_FOLDER, f"{roll_no}_{name}.png")
+    photo_path = os.path.join(PHOTO_FOLDER, f"{roll_no}_{name}.jpg")
     capture_photo(photo_path)
 
     image = face_recognition.load_image_file(photo_path)
@@ -82,14 +88,19 @@ def mark_attendance(roll_no):
     """Marks attendance by verifying the student."""
     if not roll_no:
         return "Roll number is required!", False
+    
+    try:
+        roll_no=int(roll_no)
+    except ValueError:
+        return "Roll no should be Integer", False
 
     # Capture the current photo
-    temp_photo = "temp_photo.png"
+    temp_photo = "temp_photo.jpg"
     capture_photo(temp_photo)
 
     # Match the photo
     for file in os.listdir(PHOTO_FOLDER):
-        if file.startswith(roll_no + "_"):
+        if file.startswith(str(roll_no) + "_"):
             saved_photo_path = os.path.join(PHOTO_FOLDER, file)
             saved_image = face_recognition.load_image_file(saved_photo_path)
             saved_encoding = face_recognition.face_encodings(saved_image)[0]
@@ -98,9 +109,9 @@ def mark_attendance(roll_no):
             temp_encodings = face_recognition.face_encodings(temp_image)
             
             if temp_encodings:
-                matches = face_recognition.compare_faces(temp_encodings, saved_encoding ,tolerance=0.4)
+                matches = face_recognition.compare_faces(temp_encodings, saved_encoding ,tolerance=TOLERENCE)
                 if True in matches:
-                    name = file.split("_")[1].replace(".png", "")
+                    name = file.split("_")[1].replace(".jpg", "")
                     log_attendance(roll_no, name)
                     os.remove(temp_photo)
                     return "Attendance marked successfully!", True

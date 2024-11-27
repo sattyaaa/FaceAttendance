@@ -48,6 +48,9 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
      python app.py
      ```
 
+### Tolerence
+**If reslt is not accurate try changing `TOLERENCE` value
+
 ## Author
 
 Created by [sattyaaa](https://github.com/sattyaaa).

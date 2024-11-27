@@ -39,7 +39,7 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
    ```
    - If installation not working try manually installing dlib from [https://github.com/z-mahmud22/Dlib_Windows_Python3.x](https://github.com/z-mahmud22/Dlib_Windows_Python3.x)
 
-   - You might also need to downgrade your numpy to numpy==1.26.4
+   - You might also need to downgrade your numpy to ```numpy==1.26.4```
 
 
 ## Usage
@@ -51,7 +51,7 @@ This Python project is a **Facial Recognition Attendance System** that uses `Ope
      ```
 
 ### Tolerence
-If result is not accurate try changing `TOLERENCE` value in attendance.py
+If result is not accurate try changing `TOLERENCE` value in ```attendance.py```
 
 ## Author
 

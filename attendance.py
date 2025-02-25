@@ -141,3 +141,15 @@ def get_attendance_data():
             data.append(row)
 
         return data
+
+
+def export_attendance(destination_path):
+    """Exports the attendance.csv file to the desired location using the os module."""
+    if not os.path.exists(ATTENDANCE_FILE):
+        return "Attendance file does not exist!", False
+
+    try:
+        os.rename(ATTENDANCE_FILE, destination_path)
+        return f"Attendance file moved to {destination_path} successfully!", True
+    except Exception as e:
+        return f"An error occurred while moving the file: {e}", False

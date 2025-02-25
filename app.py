@@ -106,8 +106,6 @@ tree.column("Name", width=60, anchor="center")
 tree.column("Date", width=50, anchor="center")
 tree.column("Time", width=50, anchor="center")
 
-tree.pack(fill="both", expand=True, padx=10, pady=10)
-
 def populate_attendance_table():
     """Populates the Treeview with attendance data."""
     data = attendance.get_attendance_data()  # Fetch the data from your CSV file
@@ -115,6 +113,8 @@ def populate_attendance_table():
         tree.delete(row)  # Clear existing data
     for record in data:
         tree.insert("", "end", values=record)
+
+tree.pack(fill="both", expand=True, padx=10, pady=10)
 
 create_button(view_frame, "Refresh", populate_attendance_table)
 create_button(view_frame, "Back", lambda: switch_frame(main_menu))

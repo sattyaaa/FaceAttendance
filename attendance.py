@@ -3,24 +3,23 @@ import os
 import face_recognition
 import csv
 from datetime import datetime
+import sqlite3
+import numpy as np
 
-# Paths
-PHOTO_FOLDER = "photos"
-ATTENDANCE_FILE = "attendance.csv"
+
 
 #If program not working properly try adjusting tolerence value
 TOLERENCE = 0.4 
 
-# Ensure directories and files exist
-os.makedirs(PHOTO_FOLDER, exist_ok=True)
-if not os.path.exists(ATTENDANCE_FILE) or os.stat(ATTENDANCE_FILE).st_size == 0:
-    with open(ATTENDANCE_FILE, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Roll No", "Name", "Date", "Time"])
+
+# Database connection
+conn = sqlite3.connect('attendance.db')
+c = conn.cursor()
+
 
 # Functions
 def capture_photo(filename):
-    """Captures a photo, detects faces, draws a white rectangle around them, and saves it with the given filename."""
+    """Captures a photo, detects faces, draws a white rectangle around them, and saves it with the given filename (temporarly)."""
     cam = cv2.VideoCapture(0)
     cv2.namedWindow("Capture Photo")
     
@@ -57,7 +56,6 @@ def capture_photo(filename):
         key = cv2.waitKey(1)
         if key % 256 == 32:  # Space bar to capture
             cv2.imwrite(filename, cv2.flip(frame, 1))
-            print(f"Photo saved as {filename}")
             break
 
     cam.release()
@@ -66,23 +64,40 @@ def capture_photo(filename):
 def register_student(roll_no, name):
     """Registers a new student."""
     if not roll_no or not name:
-        return "Roll number and name are required!" , False
+        return "Roll number and name are required!", False
     
     try:
-        roll_no=int(roll_no)
+        roll_no = int(roll_no)
     except ValueError:
         return "Roll no should be Integer", False
 
-    photo_path = os.path.join(PHOTO_FOLDER, f"{roll_no}_{name}.jpg")
-    capture_photo(photo_path)
+    # Check if the roll number already exists in the student database
+    c.execute("SELECT name FROM student WHERE roll_no = ?", (roll_no,))
+    result = c.fetchone()
 
+    if result:
+        return f"Student with roll number {roll_no} already registered as {result[0]}!", False
+
+    photo_path = f"{roll_no}_{name}.jpg"
+    capture_photo(photo_path)
     image = face_recognition.load_image_file(photo_path)
+    os.remove(photo_path)
+
     face_locations = face_recognition.face_locations(image)
     no_of_Faces = len(face_locations)
 
     if no_of_Faces != 1:
-        os.remove(photo_path)
         return f"There should be one face, {no_of_Faces} detected", False
+
+    face_encoding = face_recognition.face_encodings(image)[0]
+    face_encoding_blob = np.array(face_encoding).tobytes()
+
+    try:
+        c.execute("INSERT INTO student (roll_no, name, face_encoding) VALUES (?, ?, ?)", 
+                  (roll_no, name, face_encoding_blob))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        return "Roll number already exists!", False
     
     return f"Student {name} registered successfully!", True
 
@@ -92,64 +107,79 @@ def mark_attendance(roll_no):
         return "Roll number is required!", False
     
     try:
-        roll_no=int(roll_no)
+        roll_no = int(roll_no)
     except ValueError:
         return "Roll no should be Integer", False
+
+    # Check if the roll number exists in the student database
+    c.execute("SELECT name, face_encoding FROM student WHERE roll_no = ?", (roll_no,))
+    result = c.fetchone()
+
+    if not result:
+        return "Roll number not registered!", False
+
+    name, face_encoding_blob = result
 
     # Capture the current photo
     temp_photo = "temp_photo.jpg"
     capture_photo(temp_photo)
 
-    # Match the photo
-    for file in os.listdir(PHOTO_FOLDER):
-        if file.startswith(str(roll_no) + "_"):
-            saved_photo_path = os.path.join(PHOTO_FOLDER, file)
-            saved_image = face_recognition.load_image_file(saved_photo_path)
-            saved_encoding = face_recognition.face_encodings(saved_image)[0]
+    temp_image = face_recognition.load_image_file(temp_photo)
+    temp_encodings = face_recognition.face_encodings(temp_image)
 
-            temp_image = face_recognition.load_image_file(temp_photo)
-            temp_encodings = face_recognition.face_encodings(temp_image)
-            
-            if temp_encodings:
-                matches = face_recognition.compare_faces(temp_encodings, saved_encoding ,tolerance=TOLERENCE)
-                if True in matches:
-                    name = file.split("_")[1].replace(".jpg", "")
-                    log_attendance(roll_no, name)
-                    os.remove(temp_photo)
-                    return "Attendance marked successfully!", True
+    if not temp_encodings:
+        os.remove(temp_photo)
+        return "No face detected!", False
+
+    saved_encoding = np.frombuffer(face_encoding_blob, dtype=np.float64)
+
+    matches = face_recognition.compare_faces(temp_encodings, saved_encoding,  tolerance=TOLERENCE)
+    if True in matches:
+        log_attendance(roll_no, name)
+        os.remove(temp_photo)
+        return "Attendance marked successfully!", True
 
     os.remove(temp_photo)
     return "Face not recognized or matched!", False
 
 def log_attendance(roll_no, name):
-    """Logs attendance to the CSV file."""
+    """Logs attendance to the database."""
     now = datetime.now()
-    date = now.strftime("%Y-%m-%d")
-    time = now.strftime("%H:%M:%S")
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
     
-    # Add new attendance entry
-    with open(ATTENDANCE_FILE, "a", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow([roll_no, name, date, time])
+    c.execute("INSERT INTO attendance (roll_no, date_time) VALUES (?, ?)", (roll_no, date_time))
+    conn.commit()
 
 def get_attendance_data():
-    with open(ATTENDANCE_FILE, "r", newline="") as file:
-        reader = csv.reader(file)
-        data = []
-        next(reader)
-        for row in reader:
-            data.append(row)
-
-        return data
+    """Fetches attendance data from the database."""
+    c.execute("SELECT student.roll_no, student.name, attendance.date_time FROM attendance JOIN student ON attendance.roll_no = student.roll_no")
+    rows = c.fetchall()
+    data = []
+    for row in rows:
+        roll_no, name, date_time = row
+        date, time = date_time.split(" ")
+        data.append([roll_no, name, date, time])
+    return data
 
 
 def export_attendance(destination_path):
-    """Exports the attendance.csv file to the desired location using the os module."""
-    if not os.path.exists(ATTENDANCE_FILE):
-        return "Attendance file does not exist!", False
-
+    """Exports the attendance data from the database to a CSV file at the desired location and clears the attendance table."""
+    data = get_attendance_data()
+    
     try:
-        os.rename(ATTENDANCE_FILE, destination_path)
-        return f"Attendance file moved to {destination_path} successfully!", True
+        with open(destination_path, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Roll No", "Name", "Date", "Time"])  # Adding header
+            writer.writerows(data)
+        
+        # Clear the attendance table after exporting
+        c.execute("DELETE FROM attendance")
+        conn.commit()
+        
+        return f"Attendance data exported to {destination_path}", True
     except Exception as e:
-        return f"An error occurred while moving the file: {e}", False
+        return f"An error occurred while exporting the data: {e}", False
+
+# Ensure the database connection is closed properly
+import atexit
+atexit.register(lambda: conn.close())
